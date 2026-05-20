@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}HCLV SMS{% endblock %} — Holy Cross Lake View SSS</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 0mm; /* Removes browser headers/footers completely */
+  }
+  
+  @page :first {
+    margin-top: 0mm;
+  }
+  
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    overflow: visible !important;
+  }
+  
+  /* Hide app chrome */
+  .sidebar, .topbar, .site-footer, .no-print { 
+    display: none !important; 
+  }
+  
+  /* Keep report content */
+  .page-break { 
+    page-break-inside: avoid; 
+    margin-bottom: 12px !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+  }
+  
+  .card { 
+    border: none !important; 
+    box-shadow: none !important; 
+    padding: 0 !important; 
+    margin: 0 !important;
+  }
+  
+  table { 
+    font-size: 7pt !important; 
+    width: 100% !important; 
+    border-collapse: collapse !important; 
+  }
+  
+  th, td { 
+    padding: 3px 2px !important; 
+    border: 1px solid #ccc !important; 
+  }
+  
+  th[style*="writing-mode"] { 
+    height: 70px !important; 
+    font-size: 6pt !important; 
+  }
+  
+  /* Keep your custom footer */
+  div[style*="Academics Office"] { 
+    page-break-after: avoid !important; 
+  }
+  
+  /* Remove sticky headers in print */
+  thead tr { 
+    position: static !important; 
+    top: auto !important; 
+  }
+}
+</style>
+</head>
+<body>
+
+{% if session.user_id %}
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <a class="sidebar-brand" href="{{ url_for('home') }}">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="HCLV Logo">
+    <div class="sidebar-brand-text">
+      <div class="sidebar-brand-title">Holy Cross Lake View</div>
+      <div class="sidebar-brand-sub">School Management</div>
+    </div>
+  </a>
+
+  {% set role = session.get('role') %}
+
+  {% if role == 'admin' %}
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Administration</div>
+    <a href="{{ url_for('admin_dashboard') }}" class="nav-link-sidebar {% if request.endpoint=='admin_dashboard' %}active{% endif %}">
+      <span class="icon">🏠</span> Dashboard
+    </a>
+    <a href="{{ url_for('admin_students') }}" class="nav-link-sidebar {% if 'student' in request.endpoint %}active{% endif %}">
+      <span class="icon">👥</span> Students
+    </a>
+    <a href="{{ url_for('admin_teachers') }}" class="nav-link-sidebar {% if 'teacher' in request.endpoint and 'dashboard' not in request.endpoint %}active{% endif %}">
+      <span class="icon">👨‍🏫</span> Teachers
+    </a>
+    <a href="{{ url_for('admin_classes') }}" class="nav-link-sidebar {% if request.endpoint=='admin_classes' %}active{% endif %}">
+      <span class="icon">🏫</span> Classes
+    </a>
+    <a href="{{ url_for('admin_subjects') }}" class="nav-link-sidebar {% if request.endpoint=='admin_subjects' %}active{% endif %}">
+      <span class="icon">📚</span> Subjects
+    </a>
+    <a href="{{ url_for('admin_marks') }}" class="nav-link-sidebar {% if request.endpoint=='admin_marks' %}active{% endif %}">
+      <span class="icon">📝</span> Marks
+    </a>
+    <a href="{{ url_for('admin_reports') }}" class="nav-link-sidebar {% if request.endpoint=='admin_reports' %}active{% endif %}">
+      <span class="icon">📄</span> Reports
+    </a>
+    {% if not session.get('permissions') or 'view_admins' in session.get('permissions') %}
+    <a href="{{ url_for('admin_admins') }}" class="nav-link-sidebar {% if 'admin_admins' in request.endpoint %}active{% endif %}">
+      <span class="icon">⚙️</span> Admins
+    </a>
+    <!-- <a href="{{ url_for('admin_results_sheet') }}" class="nav-link-sidebar {% if request.endpoint=='admin_results_sheet' %}active{% endif %}">
+      <span class="icon">📊</span> Class Results Sheet
+    </a> -->
+    <!-- <a href="{{ url_for('admin_master_results') }}" class="nav-link-sidebar {% if request.endpoint=='admin_master_results' %}active{% endif %}">
+      <span class="icon">📊</span> Master Results
+    </a> -->
+    <a href="{{ url_for('admin_alevel_master_results') }}" class="nav-link-sidebar {% if request.endpoint=='admin_alevel_master_results' %}active{% endif %}">
+      <span class="icon">📊</span> A-Level Results
+    </a>
+    <a href="{{ url_for('admin_olevel_master_results') }}" class="nav-link-sidebar {% if request.endpoint=='admin_olevel_master_results' %}active{% endif %}">
+      <span class="icon">📊</span> O-Level Results
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if role == 'teacher' %}
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Teacher Portal</div>
+    <a href="{{ url_for('teacher_dashboard') }}" class="nav-link-sidebar {% if request.endpoint=='teacher_dashboard' %}active{% endif %}">
+      <span class="icon">🏠</span> Dashboard
+    </a>
+    <a href="{{ url_for('teacher_marks') }}" class="nav-link-sidebar {% if 'marks' in request.endpoint %}active{% endif %}">
+      <span class="icon">📝</span> Enter Marks
+    </a>
+  </div>
+  {% endif %}
+
+  {% if role == 'student' %}
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Student Portal</div>
+    <a href="{{ url_for('student_dashboard') }}" class="nav-link-sidebar {% if request.endpoint=='student_dashboard' %}active{% endif %}">
+      <span class="icon">🏠</span> Dashboard
+    </a>
+    <a href="{{ url_for('student_reports') }}" class="nav-link-sidebar {% if 'report' in request.endpoint %}active{% endif %}">
+      <span class="icon">📄</span> My Reports
+    </a>
+  </div>
+  {% endif %}
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Account</div>
+    <a href="{{ url_for('profile') }}" class="nav-link-sidebar {% if request.endpoint=='profile' %}active{% endif %}">
+      <span class="icon">👤</span> Profile
+    </a>
+    <a href="{{ url_for('settings') }}" class="nav-link-sidebar {% if request.endpoint=='settings' %}active{% endif %}">
+      <span class="icon">⚙️</span> Settings
+    </a>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="sidebar-user">
+      {% set pic = session.get('profile_pic', 'default.png') %}
+      <img src="{% if pic and pic != 'default.png' %}{{ url_for('static', filename='uploads/' + pic) }}{% else %}{{ url_for('static', filename='images/logo.png') }}{% endif %}" alt="">
+      <div>
+        <div class="sidebar-user-name">{{ session.get('full_name', 'User') }}</div>
+        <div class="sidebar-user-role">{{ session.get('role', '') }}</div>
+      </div>
+    </div>
+    <a href="{{ url_for('logout') }}" class="nav-link-sidebar" style="color:#f87171">
+      <span class="icon">🚪</span> Logout
+    </a>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main-wrapper">
+  <header class="topbar">
+    <button id="sidebar-toggle" class="btn btn-outline btn-sm" style="display:none" title="Toggle menu">☰</button>
+    <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+    <div class="topbar-actions">{% block topbar_actions %}{% endblock %}
+      <button id="theme-toggle" class="btn btn-outline btn-sm" title="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <main class="page-body">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }}">
+          <span>{% if cat=='success' %}✅{% elif cat=='danger' %}❌{% elif cat=='info' %}ℹ️{% else %}⚠️{% endif %}</span>
+          <span>{{ msg }}</span>
+        </div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    © {{ current_year }} <a href="mailto:kephache55@gmail.com">CKS-Tech</a> | <a href="mailto:ellaish27@gmail.com">D@in Corp.</a> | 
+    <a href="mailto:piusprince806@gmail.com">Joxe_verse</a>
+  </footer>
+</div>
+
+{% else %}
+{% block content_nolayout %}{% endblock %}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+<script>
+// Print helper: sets clean filename for PDF save dialog
+function preparePDF(cls, term, year) {
+  const originalTitle = document.title;
+  document.title = `${cls}_Results_T${term}_${year}.pdf`;
+  window.print();
+  setTimeout(() => { document.title = originalTitle; }, 1000);
+}
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

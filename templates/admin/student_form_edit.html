@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Edit Student{% endblock %}
+{% block page_title %}Edit Student{% endblock %}
+{% block topbar_actions %}<a href="{{ url_for('admin_students') }}" class="btn btn-outline btn-sm">← Back</a>{% endblock %}
+
+{% block content %}
+<div style="max-width:820px; margin:0 auto">
+  <div class="card">
+    <div class="card-header"><span class="card-header-title">Edit Student Record</span></div>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        <div class="alert alert-info mb-3" style="font-size:.85rem">
+          <strong>Note:</strong> Re-select subjects below to automatically regenerate the combination. Leave unchanged to keep existing combo.
+        </div>
+
+        <!-- Basic Info -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-4"><label class="form-label">Last Name *</label><input type="text" name="last_name" class="form-control" value="{{ student.last_name }}" required></div>
+          <div class="col-md-4"><label class="form-label">First Name *</label><input type="text" name="first_name" class="form-control" value="{{ student.first_name }}" required></div>
+          <div class="col-md-4"><label class="form-label">Other Names</label><input type="text" name="other_names" class="form-control" value="{{ student.other_names }}"></div>
+          <div class="col-md-6"><label class="form-label">Username</label><input type="text" name="username" class="form-control" value="{{ student.username }}"></div>
+        </div>
+        <div class="mb-3"><label class="form-label">New Password <small class="text-muted">(leave blank to keep current)</small></label><input type="password" name="new_password" class="form-control"></div>
+        <div class="mb-3"><label class="form-label">Profile Photo</label><input type="file" name="profile_pic" accept="image/*" class="form-control"></div>
+        
+        <div class="row g-3 mb-3">
+          <div class="col-md-6"><label class="form-label">School Pay No.</label><input type="text" name="school_pay_no" class="form-control" value="{{ student.school_pay_no }}"></div>
+          <div class="col-md-6"><label class="form-label">Enrollment Year</label><input type="number" name="enrollment_year" class="form-control" value="{{ student.enrollment_year }}"></div>
+        </div>
+        <div class="mb-3"><label class="form-label">House</label>
+          <select name="house" class="form-select">{% for h in houses %}<option value="{{ h }}" {% if student.house == h %}selected{% endif %}>{{ h }}</option>{% endfor %}</select>
+        </div>
+
+        <!-- A-Level Section -->
+        {% if level == 'alevel' %}
+        <div class="mt-4 p-3" style="border:1px solid rgba(212,175,55,.4); border-radius:8px; background:rgba(255,245,220,.8)">
+          <h5 class="mb-3">📚 A-Level Subjects</h5>
+          <div class="row g-3 mb-3">
+            {% for i in [1,2,3] %}
+            <div class="col-md-4">
+              <label class="form-label">Principal Subject {{ i }}</label>
+              <select name="principal_{{ i }}" id="p{{ i }}" class="form-select principal-select">
+                <option value="">— Select —</option>
+                {% for subj in principals %}<option value="{{ subj.id }}" data-name="{{ subj.name }}">{{ subj.name }}</option>{% endfor %}
+              </select>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="mb-3"><label class="form-label">Subsidiary Subject</label>
+            <select name="subsidiary" id="subsidiary" class="form-select">
+              <option value="">— Select —</option>
+              {% for sub in subsidiaries %}<option value="{{ sub.id }}" data-name="{{ sub.name }}" data-code="{{ sub.code }}">{{ sub.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="mb-3"><label class="form-label">Auto-Generated Combination</label>
+            <input type="text" id="combo-preview" class="form-control fw-bold" readonly value="{{ student.combination or 'Select 3 principals...' }}" style="letter-spacing:1px; text-transform:uppercase">
+            <input type="hidden" name="combination" id="combo-hidden" value="{{ student.combination }}">
+          </div>
+        </div>
+
+        <!-- O-Level Section -->
+        {% elif level == 'olevel' %}
+        <div class="mt-4 p-3" style="border:1px solid rgba(0,48,135,.18); border-radius:8px; background:rgba(220,235,255,.7)">
+          <h5 class="mb-3">📘 O-Level Subjects</h5>
+          {% if class_name in ['S.3', 'S.4'] %}
+          <div class="mb-3"><label class="form-label">Elective Subject</label>
+            <select name="elective" id="elective" class="form-select">
+              <option value="">— Select —</option>
+              {% for sub in electives %}<option value="{{ sub.id }}" data-name="{{ sub.name }}">{{ sub.name }}</option>{% endfor %}
+            </select>
+          </div>
+          {% else %}
+          <p class="text-muted small">S.1/S.2 students have fixed compulsory subjects. No changes needed here.</p>
+          {% endif %}
+          <div class="mb-3"><label class="form-label">Combination</label>
+            <input type="text" name="combination" id="combo-olevel" class="form-control" readonly value="{{ student.combination or 'O-Level' }}">
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <a href="{{ url_for('admin_students') }}" class="btn btn-outline">Cancel</a>
+          <button type="submit" class="btn btn-primary px-4">Update Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const pSelects = [document.getElementById('p1'), document.getElementById('p2'), document.getElementById('p3')].filter(Boolean);
+  const subSelect = document.getElementById('subsidiary');
+  const preview = document.getElementById('combo-preview');
+  const hidden = document.getElementById('combo-hidden');
+  const elective = document.getElementById('elective');
+  const olevelCombo = document.getElementById('combo-olevel');
+  const SUB_CODES = {'Subsidiary Mathematics': 'SM', 'Subsidiary Computer Studies': 'ICT'};
+
+  function updateAlevel() {
+    if (!preview || pSelects.length < 3) return;
+    const names = pSelects.map(s => s.selectedOptions[0]?.dataset.name || '').filter(Boolean);
+    const hasMath = names.some(n => n.toLowerCase().includes('mathematics'));
+    const hasEcon = names.some(n => n.toLowerCase().includes('economics'));
+    
+    let target = hasMath ? 'Subsidiary Computer Studies' : (hasEcon && !hasMath ? 'Subsidiary Mathematics' : '');
+    if (target && subSelect) {
+      const opt = Array.from(subSelect.options).find(o => o.dataset.name === target);
+      if (opt) subSelect.value = opt.value;
+    }
+    
+    if (names.length === 3 && subSelect?.value) {
+      const subName = subSelect.selectedOptions[0]?.dataset.name || '';
+      const subCode = SUB_CODES[subName] || subSelect.selectedOptions[0]?.dataset.code || 'SUB';
+      preview.value = `${names.map(n => n[0].toUpperCase()).join('')}/${subCode}/GP`;
+      hidden.value = preview.value;
+    }
+  }
+
+  function updateOlevel() {
+    if (!olevelCombo || !elective) return;
+    const elecName = elective.selectedOptions[0]?.dataset.name || '';
+    olevelCombo.value = elecName ? `O-Level (${elecName[0].toUpperCase()})` : 'O-Level';
+  }
+
+  pSelects.forEach(s => s.addEventListener('change', updateAlevel));
+  if (subSelect) subSelect.addEventListener('change', updateAlevel);
+  if (elective) elective.addEventListener('change', updateOlevel);
+  updateAlevel(); updateOlevel();
+})();
+</script>
+{% endblock %}

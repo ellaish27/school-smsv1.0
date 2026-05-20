@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if teacher else 'Add' }} Teacher{% endblock %}
+{% block page_title %}{{ 'Edit' if teacher else 'Add' }} Teacher{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_teachers') }}" class="btn btn-outline btn-sm">← Back to Teachers</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:900px">
+<div class="card">
+  <div class="card-header">
+    <span class="card-header-title">{{ 'Edit Teacher Record' if teacher else 'New Teacher Registration' }}</span>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <label class="form-label">Last Name *</label>
+          <input type="text" name="last_name" class="form-control" required
+            value="{{ teacher.last_name if teacher else '' }}" placeholder="e.g. Okello">
+        </div>
+        <div>
+          <label class="form-label">First Name *</label>
+          <input type="text" name="first_name" class="form-control" required
+            value="{{ teacher.first_name if teacher else '' }}" placeholder="e.g. John">
+        </div>
+        <div>
+          <label class="form-label">Other Names</label>
+          <input type="text" name="other_names" class="form-control"
+            value="{{ teacher.other_names if teacher else '' }}" placeholder="e.g. Robert">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <label class="form-label">Username *</label>
+          <input type="text" name="username" class="form-control" required
+            value="{{ teacher.username if teacher else '' }}">
+        </div>
+      </div>
+
+      {% if not teacher %}
+      <div style="margin-bottom:16px">
+        <label class="form-label">Password (default: teacher123)</label>
+        <input type="password" name="password" class="form-control" placeholder="Leave blank for default">
+      </div>
+      {% else %}
+      <div style="margin-bottom:16px">
+        <label class="form-label">New Password (blank = keep current)</label>
+        <input type="password" name="new_password" class="form-control" placeholder="Leave blank to keep current">
+      </div>
+      {% endif %}
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <label class="form-label">Teacher ID *</label>
+          <input type="text" name="teacher_id" class="form-control" required readonly
+            value="{{ teacher.teacher_id if teacher else next_teacher_id }}" placeholder="e.g. TCH001">
+          <small class="form-text text-muted">Teacher ID is auto-generated on registration.</small>
+        </div>
+        <div>
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control"
+            value="{{ teacher.email if teacher else '' }}">
+        </div>
+        <div>
+          <label class="form-label">Phone</label>
+          <input type="text" name="phone" class="form-control"
+            value="{{ teacher.phone if teacher else '' }}" placeholder="+256 7XX XXX XXX">
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <label class="form-label">Qualification</label>
+        <input type="text" name="qualification" class="form-control"
+          value="{{ teacher.qualification if teacher else '' }}" placeholder="e.g. B.Ed Mathematics, Makerere University">
+      </div>
+
+      <!-- assignment year -->
+      <div style="margin-bottom:16px">
+        <label class="form-label">Assignment Year</label>
+        <input type="number" name="year" class="form-control" style="max-width:120px"
+          value="{{ current_year }}" min="2020" max="2035">
+      </div>
+
+      <!-- subject assignment -->
+      <div style="margin-bottom:20px">
+        <label class="form-label">Assign Subjects / Papers</label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:10px">
+          {% set current_sps = assignments | map(attribute='subject_paper_id') | list %}
+          <div style="grid-column:1/-1;font-size:.7rem;color:var(--text-muted);margin-bottom:4px">O-Level Subjects</div>
+          {% for sp in subjects if sp.level == 'O' %}
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer">
+            <input type="checkbox" name="subject_papers" value="{{ sp.id }}"
+              {% if sp.id in current_sps %}checked{% endif %}>
+            {{ sp.name }} P{{ sp.paper_number }} ({{ sp.paper_code }})
+          </label>
+          {% endfor %}
+          <div style="grid-column:1/-1;font-size:.7rem;color:var(--text-muted);margin:6px 0 4px">A-Level Subjects</div>
+          {% for sp in subjects if sp.level == 'A' %}
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer">
+            <input type="checkbox" name="subject_papers" value="{{ sp.id }}"
+              {% if sp.id in current_sps %}checked{% endif %}>
+            {{ sp.name }} P{{ sp.paper_number }} ({{ sp.paper_code }})
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- class assignment -->
+      <div style="margin-bottom:24px">
+        <label class="form-label">Assign to Classes</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          {% set current_cls = assignments | map(attribute='class_id') | list %}
+          {% for c in classes %}
+          <label style="display:flex;align-items:center;gap:5px;font-size:.85rem;cursor:pointer;border:1px solid var(--border);border-radius:6px;padding:6px 12px">
+            <input type="checkbox" name="classes" value="{{ c.id }}"
+              {% if c.id in current_cls %}checked{% endif %}>
+            {{ c.name }}{% if c.stream %} ({{ c.stream }}){% endif %}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="d-flex gap-2" style="justify-content:flex-end">
+        <a href="{{ url_for('admin_teachers') }}" class="btn btn-outline">Cancel</a>
+        <button type="submit" class="btn btn-primary">{{ 'Update Teacher' if teacher else 'Add Teacher' }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+{% endblock %}

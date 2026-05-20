@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}Add O-Level Student{% endblock %}
+{% block page_title %}Add O-Level Student{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_students') }}" class="btn btn-outline btn-sm">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:750px; margin:0 auto">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">📘 O-Level Student Registration</span>
+    </div>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        
+        <div class="alert alert-info mb-3" style="font-size:.85rem">
+          <strong>Student Number</strong> auto-generates after save.
+        </div>
+
+        <!-- Basic Info -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Last Name *</label>
+            <input type="text" name="last_name" class="form-control" required placeholder="e.g. Okello">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">First Name *</label>
+            <input type="text" name="first_name" class="form-control" required placeholder="e.g. John">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Other Names</label>
+            <input type="text" name="other_names" class="form-control" placeholder="e.g. Robert">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Username *</label>
+            <input type="text" name="username" class="form-control" required placeholder="e.g. john.okello">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Password <small class="text-muted">(default: student123)</small></label>
+          <input type="password" name="password" class="form-control" placeholder="Leave blank to use default">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Profile Photo</label>
+          <input type="file" name="profile_pic" accept="image/*" class="form-control">
+          <small class="text-muted">Max 5 MB — PNG, JPG, JPEG</small>
+        </div>
+
+        <!-- School Details -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">School Pay No.</label>
+            <input type="text" name="school_pay_no" class="form-control" maxlength="10" pattern="\d{10}" placeholder="e.g. 1009702115">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Enrollment Year</label>
+            <input type="number" name="enrollment_year" class="form-control" value="{{ current_year }}">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Class *</label>
+            <select name="class_id" class="form-select" id="olevel-class" required>
+              <option value="">— Select Class —</option>
+              {% for c in classes %}
+              <option value="{{ c.id }}" data-class="{{ c.name }}">{{ c.name }}{% if c.stream %}/{{ c.stream }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">House</label>
+            <select name="house" class="form-select">
+              <option value="">— Select House —</option>
+              {% for h in houses %}
+              <option value="{{ h }}">{{ h }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- 🔑 ADDED: Gender Field (Required) -->
+        <div class="mb-3">
+          <label class="form-label">Gender *</label>
+          <div class="d-flex gap-3">
+            <label class="form-check-label">
+              <input type="radio" name="gender" value="M" class="form-check-input" required> Male
+            </label>
+            <label class="form-check-label">
+              <input type="radio" name="gender" value="F" class="form-check-input" required> Female
+            </label>
+          </div>
+        </div>
+
+        <!-- O-Level Subjects -->
+        <div class="mt-4 p-3" style="border:1px solid rgba(0,48,135,.18); border-radius:8px; background:rgba(220,235,255,.7)">
+          <h5 class="mb-3">📚 Subject Structure</h5>
+          
+          <!-- S.1 & S.2 Section -->
+<div id="s12-section" style="display:none;">
+  <!-- ... compulsory list ... -->
+  <div class="mb-3">
+    <label class="form-label">Additional/Vocational Subject <small class="text-muted">(Optional)</small></label>
+    <select name="elective" id="elective-s12" class="form-select">
+      <option value="">— None —</option>
+      {% for sub in electives %}
+      <option value="{{ sub.id }}" data-name="{{ sub.name }}">{{ sub.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<!-- S.3 & S.4 Section -->
+<div id="s34-section" style="display:none;">
+  <!-- ... compulsory list ... -->
+  <div class="mb-3">
+    <label class="form-label">Choose ONE Elective <span class="text-danger">*</span></label>
+    <select name="elective" id="elective-s34" class="form-select">
+      <option value="">— Select vocational or language subject —</option>
+      {% for sub in electives %}
+      <option value="{{ sub.id }}" data-name="{{ sub.name }}">{{ sub.name }}</option>
+      {% endfor %}
+    </select>
+    <small class="text-muted">All students offer CRE. Pick one additional subject.</small>
+  </div>
+</div>
+          
+          <!-- 🔑 Restored: Combination Preview -->
+          <div class="mb-0">
+            <label class="form-label">Auto-Generated Combination</label>
+            <input type="text" name="combination" id="olevel-combo" class="form-control fw-bold" readonly value="Select class..." style="letter-spacing:1px; background:#f8f9fa">
+          </div>
+        </div>
+
+        <div class="mb-3 mt-3">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control">
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <a href="{{ url_for('admin_students') }}" class="btn btn-outline">Cancel</a>
+          <button type="submit" class="btn btn-primary px-4">Add Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const classSelect    = document.getElementById('olevel-class');
+  const s12Section     = document.getElementById('s12-section');
+  const s34Section     = document.getElementById('s34-section');
+  const electiveS12    = document.getElementById('elective-s12');
+  const electiveS34    = document.getElementById('elective-s34');
+  const comboInput     = document.getElementById('olevel-combo');
+
+  function updateForm() {
+    const cls = classSelect.selectedOptions[0]?.dataset.class || '';
+    
+    // Show/Hide sections + enable/disable electives
+    if (cls === 'S.1' || cls === 'S.2') {
+      s12Section.style.display = 'block';
+      s34Section.style.display = 'none';
+      if (electiveS12) { electiveS12.disabled = false; electiveS12.required = false; }
+      if (electiveS34) { electiveS34.disabled = true; electiveS34.required = false; electiveS34.value = ''; }
+    } else if (cls === 'S.3' || cls === 'S.4') {
+      s12Section.style.display = 'none';
+      s34Section.style.display = 'block';
+      if (electiveS34) { electiveS34.disabled = false; electiveS34.required = true; }
+      if (electiveS12) { electiveS12.disabled = true; electiveS12.required = false; electiveS12.value = ''; }
+    } else {
+      s12Section.style.display = 'none';
+      s34Section.style.display = 'none';
+      if (electiveS12) { electiveS12.disabled = true; electiveS12.required = false; }
+      if (electiveS34) { electiveS34.disabled = true; electiveS34.required = false; }
+    }
+
+    // Update combination preview
+    const activeElective = (cls === 'S.3' || cls === 'S.4') ? electiveS34 : electiveS12;
+    const elecName = activeElective?.selectedOptions[0]?.dataset.name || '';
+    
+    if ((cls === 'S.3' || cls === 'S.4') && electiveS34?.value) {
+      comboInput.value = `O-Level (${elecName.trim()[0].toUpperCase()})`;
+    } else if ((cls === 'S.1' || cls === 'S.2') && electiveS12?.value) {
+      comboInput.value = `O-Level (${elecName.trim()[0].toUpperCase()})`;
+    } else if (cls === 'S.1' || cls === 'S.2') {
+      comboInput.value = 'O-Level';
+    } else if (cls === 'S.3' || cls === 'S.4') {
+      comboInput.value = 'Select elective...';
+    } else {
+      comboInput.value = 'Select class...';
+    }
+  }
+
+  classSelect.addEventListener('change', updateForm);
+  if (electiveS12) electiveS12.addEventListener('change', updateForm);
+  if (electiveS34) electiveS34.addEventListener('change', updateForm);
+  updateForm(); // Initial run
+})();
+</script>
+{% endblock %}

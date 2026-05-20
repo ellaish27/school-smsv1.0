@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Marks Overview{% endblock %}
+{% block page_title %}Marks Overview{% endblock %}
+
+{% block content %}
+<!-- filters -->
+<div class="card mb-3">
+  <div class="card-body" style="padding:14px">
+    <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div style="min-width:130px">
+        <label class="form-label">Class</label>
+        <select name="class_id" class="form-select">
+          <option value="">All Classes</option>
+          {% for c in classes %}
+          <option value="{{ c.id }}" {% if class_id==c.id|string %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="min-width:160px">
+        <label class="form-label">Sort by Name</label>
+        <select name="sort" class="form-select">
+          <option value="class" {% if sort=='class' %}selected{% endif %}>By class then name</option>
+          <option value="name_asc" {% if sort=='name_asc' %}selected{% endif %}>Name A–Z</option>
+          <option value="name_desc" {% if sort=='name_desc' %}selected{% endif %}>Name Z–A</option>
+        </select>
+      </div>
+      <div style="min-width:90px">
+        <label class="form-label">Term</label>
+        <select name="term" class="form-select">
+          {% for t in [1,2,3] %}
+          <option value="{{ t }}" {% if term==t|string %}selected{% endif %}>Term {{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="min-width:100px">
+        <label class="form-label">Year</label>
+        <input type="number" name="year" class="form-control" value="{{ year }}" min="2020" max="2035">
+      </div>
+      <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-header-title">Marks — Term {{ term }}, {{ year }}</span>
+    <span class="small text-muted">{{ students|length }} students</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Student</th>
+          <th>Class</th>
+          <th>Marks Entered</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td class="text-muted small">{{ loop.index }}</td>
+          <td class="fw-600">{{ s.full_name }}</td>
+          <td><span class="badge badge-navy">{{ s.class_name or '—' }}</span></td>
+          <td>
+            {% set m = marks_summary.get(s.id, []) %}
+            {% if m %}
+              <span class="badge badge-green">{{ m|length }} entries</span>
+            {% else %}
+              <span class="badge badge-gray">No marks yet</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('admin_reports') }}?student_id={{ s.id }}" class="btn btn-xs btn-outline">📄 Report</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted" style="padding:32px">No students match these filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

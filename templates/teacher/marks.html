@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Enter Marks{% endblock %}
+{% block page_title %}Enter Marks{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline btn-sm">← Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<!-- selector -->
+<div class="card mb-3">
+  <div class="card-body" style="padding:14px">
+    <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div style="min-width:220px;flex:2">
+        <label class="form-label">Class / Subject / Paper</label>
+        <select name="class_id" class="form-select" id="cls-select">
+          <option value="">— Select Class —</option>
+          {% for a in assignments %}
+          <option value="{{ a.class_id }}"
+            {% if class_id == a.class_id|string %}selected{% endif %}>
+            {{ a.class_name }}{% if a.stream %}/{{ a.stream }}{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="min-width:200px;flex:2">
+        <label class="form-label">Subject Paper</label>
+        <select name="sp_id" class="form-select">
+          {% for a in assignments %}
+          <option value="{{ a.sp_id }}" {% if sp_id == a.sp_id|string %}selected{% endif %}>
+            {{ a.paper_code }} — {{ a.subject_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="min-width:90px">
+        <label class="form-label">Term</label>
+        <select name="term" class="form-select">
+          {% for t in [1,2,3] %}
+          <option value="{{ t }}" {% if term == t|string %}selected{% endif %}>Term {{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="min-width:100px">
+        <label class="form-label">Year</label>
+        <input type="number" name="year" class="form-control" value="{{ year }}" min="2020" max="2035">
+      </div>
+      <button type="submit" class="btn btn-primary">Load</button>
+    </form>
+  </div>
+</div>
+
+{% if students %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-header-title">
+      📝 {{ paper_info.subject_name }} — {{ paper_info.paper_code }}
+      &nbsp;|&nbsp; Term {{ term }}, {{ year }}
+    </span>
+    <span class="small text-muted">{{ students|length }} student(s)</span>
+  </div>
+  <form method="POST" action="{{ url_for('teacher_save_marks') }}">
+    <input type="hidden" name="sp_id"    value="{{ sp_id }}">
+    <input type="hidden" name="class_id" value="{{ class_id }}">
+    <input type="hidden" name="term"     value="{{ term }}">
+    <input type="hidden" name="year"     value="{{ year }}">
+
+    <div style="overflow-x:auto">
+      <table class="table" style="min-width:900px">
+        <thead>
+          <tr>
+            <th style="width:190px">Student</th>
+            <th style="width:130px">Student No.</th>
+            <th style="width:75px">BOT /100</th>
+            <th style="width:75px">MT /100</th>
+            <th style="width:75px">EOT /100</th>
+            <th style="width:60px">MOT</th>
+            <th style="width:60px">Final</th>
+            <th style="width:45px">Grade</th>
+            <th>Subject Comment (on report)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          {% set m = marks_data.get(s.id, {}) %}
+          <tr>
+            <input type="hidden" name="student_id" value="{{ s.id }}">
+            <td class="fw-600" style="font-size:.85rem">{{ s.full_name }}</td>
+            <td class="small text-muted" style="font-family:monospace;font-size:.78rem">{{ s.student_no }}</td>
+            <td>
+              <input type="number" class="score-input" data-sid="{{ s.id }}" data-type="BOT"
+                name="score_{{ s.id }}_BOT"
+                value="{{ m.BOT.score if m.BOT and m.BOT.score is not none else '' }}"
+                min="0" max="100" step="0.5" placeholder="—"
+                style="width:64px;padding:4px 6px;font-size:.82rem">
+            </td>
+            <td>
+              <input type="number" class="score-input" data-sid="{{ s.id }}" data-type="MT"
+                name="score_{{ s.id }}_MT"
+                value="{{ m.MT.score if m.MT and m.MT.score is not none else '' }}"
+                min="0" max="100" step="0.5" placeholder="—"
+                style="width:64px;padding:4px 6px;font-size:.82rem">
+            </td>
+            <td>
+              <input type="number" class="score-input" data-sid="{{ s.id }}" data-type="EOT"
+                name="score_{{ s.id }}_EOT"
+                value="{{ m.EOT.score if m.EOT and m.EOT.score is not none else '' }}"
+                min="0" max="100" step="0.5" placeholder="—"
+                style="width:64px;padding:4px 6px;font-size:.82rem">
+            </td>
+            <td id="mot_{{ s.id }}" class="small text-muted" style="font-size:.82rem">
+              {% set bot = m.BOT.score if m.BOT and m.BOT.score is not none else none %}
+              {% set mt  = m.MT.score  if m.MT  and m.MT.score  is not none else none %}
+              {% if bot is not none and mt is not none %}{{ '%.1f'|format((bot+mt)/2) }}
+              {% elif bot is not none %}{{ '%.1f'|format(bot) }}
+              {% elif mt is not none %}{{ '%.1f'|format(mt) }}
+              {% else %}—{% endif %}
+            </td>
+            <td id="final_{{ s.id }}" class="small" style="font-size:.82rem">
+              {% set bot = m.BOT.score if m.BOT and m.BOT.score is not none else none %}
+              {% set mt  = m.MT.score  if m.MT  and m.MT.score  is not none else none %}
+              {% set eot = m.EOT.score if m.EOT and m.EOT.score is not none else none %}
+              {% if bot is not none and mt is not none %}{% set mot_v = (bot+mt)/2 %}{% elif bot is not none %}{% set mot_v = bot %}{% elif mt is not none %}{% set mot_v = mt %}{% else %}{% set mot_v = none %}{% endif %}
+              {% if mot_v is not none and eot is not none %}{{ '%.1f'|format(mot_v*0.5+eot*0.5) }}
+              {% elif mot_v is not none %}{{ '%.1f'|format(mot_v) }}
+              {% elif eot is not none %}{{ '%.1f'|format(eot) }}
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <span class="live-grade badge grade-X" id="grade_{{ s.id }}">—</span>
+            </td>
+            <td>
+              <input type="text" name="comment_{{ s.id }}"
+                value="{{ subj_comments.get(s.id, '') }}"
+                class="form-control"
+                style="font-size:.78rem;padding:4px 8px;min-width:180px"
+                placeholder="e.g. Good improvement, needs practice in grammar…">
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer">
+      <button type="submit" class="btn btn-success">💾 Save All Marks &amp; Comments</button>
+      <span class="small text-muted ms-auto">Comments appear on the student's report card.</span>
+    </div>
+  </form>
+</div>
+
+{% elif class_id and sp_id %}
+<div class="card">
+  <div class="card-body text-center text-muted" style="padding:40px">
+    <div style="font-size:2rem">📭</div>
+    No students found in this class.
+  </div>
+</div>
+{% else %}
+<div class="card">
+  <div class="card-body text-center text-muted" style="padding:48px">
+    <div style="font-size:2.5rem">📝</div>
+    <div style="font-size:1rem;margin-top:8px">Select a class, subject, term, and year above to start entering marks.</div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

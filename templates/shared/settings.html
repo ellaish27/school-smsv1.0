@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div style="max-width:640px">
+  <div class="card mb-3">
+    <div class="card-header"><span class="card-header-title">⚙️ Account Settings</span></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <label class="form-label">Username</label>
+          <input type="text" class="form-control" value="{{ user.username }}" disabled style="background:#f4f6fb">
+        </div>
+        <div>
+          <label class="form-label">Role</label>
+          <input type="text" class="form-control" value="{{ user.role|title }}" disabled style="background:#f4f6fb">
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Member Since</label>
+        <input type="text" class="form-control" value="{{ user.created_at[:10] }}" disabled style="background:#f4f6fb">
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header"><span class="card-header-title">🔒 Change Password</span></div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('profile_update') }}" enctype="multipart/form-data">
+        <div style="margin-bottom:12px">
+          <label class="form-label">Current Password *</label>
+          <input type="password" name="current_password" class="form-control" required>
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="form-label">New Password *</label>
+          <input type="password" name="new_password" class="form-control" required minlength="6">
+        </div>
+        <button type="submit" class="btn btn-primary">Update Password</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-header-title">ℹ️ System Information</span></div>
+    <div class="card-body">
+      <table class="table" style="font-size:.85rem">
+        <tbody>
+          <tr><td class="fw-600" style="border:none;padding:6px 0">School</td><td style="border:none;padding:6px 0">Holy Cross Lake View SSS</td></tr>
+          <tr><td class="fw-600" style="border:none;padding:6px 0">Location</td><td style="border:none;padding:6px 0">Wanyange, Jinja, Uganda</td></tr>
+          <tr><td class="fw-600" style="border:none;padding:6px 0">System</td><td style="border:none;padding:6px 0">School Management System v1.0</td></tr>
+          <tr><td class="fw-600" style="border:none;padding:6px 0">Academic Year</td><td style="border:none;padding:6px 0">{{ current_year }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Classes{% endblock %}
+{% block page_title %}Classes{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-header-title">Classes (S.1 – S.6)</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="table">
+      <thead>
+        <tr><th>Class</th><th>Stream</th><th>Class Teacher</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        {% for c in classes %}
+        <tr>
+          <td><strong>{{ c.name }}</strong></td>
+          <td>{{ c.stream or '—' }}</td>
+          <td>{{ c.teacher_name or '-' }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('admin_update_class') }}" style="display:flex;gap:8px;align-items:center">
+              <input type="hidden" name="class_id" value="{{ c.id }}">
+              <input type="text" name="stream" class="form-control" style="width:130px" value="{{ c.stream or '' }}" placeholder="e.g. Sciences">
+              <select name="class_teacher_id" class="form-select" style="width:180px">
+                <option value="">No class teacher</option>
+                {% for t in teachers %}
+                <option value="{{ t.id }}" {% if c.class_teacher_id == t.id %}selected{% endif %}>{{ t.full_name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-sm btn-primary">Save</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

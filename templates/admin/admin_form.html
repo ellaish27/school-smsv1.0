@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if admin else 'Add' }} Admin{% endblock %}
+{% block page_title %}{{ 'Edit' if admin else 'Add' }} Admin{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_admins') }}" class="btn btn-outline btn-sm">← Back to Admins</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:760px">
+<div class="card">
+  <div class="card-header">
+    <span class="card-header-title">{{ 'Update Administrator' if admin else 'New Administrator Account' }}</span>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <label class="form-label">Full Name *</label>
+          <input type="text" name="full_name" class="form-control" required
+            value="{{ admin.full_name if admin else '' }}" placeholder="e.g. Jane Doe">
+        </div>
+        <div>
+          <label class="form-label">Username *</label>
+          <input type="text" name="username" class="form-control" required
+            value="{{ admin.username if admin else '' }}" placeholder="e.g. jane.doe">
+        </div>
+      </div>
+
+      {% if not admin %}
+      <div style="margin-bottom:16px">
+        <label class="form-label">Password <span class="text-muted" style="font-weight:400">(default: admin123)</span></label>
+        <input type="password" name="password" class="form-control" placeholder="Leave blank to use default">
+      </div>
+      {% else %}
+      <div style="margin-bottom:16px">
+        <label class="form-label">New Password <span class="text-muted" style="font-weight:400">(leave blank to keep current)</span></label>
+        <input type="password" name="password" class="form-control" placeholder="Leave blank to keep current">
+      </div>
+      {% endif %}
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control"
+            value="{{ admin.email if admin else '' }}" placeholder="optional">
+        </div>
+        <div>
+          <label class="form-label">Phone</label>
+          <input type="text" name="phone" class="form-control"
+            value="{{ admin.phone if admin else '' }}" placeholder="optional">
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <label class="form-label">Permissions</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          {% for key, label in permission_options.items() %}
+          <label class="form-check" style="display:flex;align-items:center;gap:10px">
+            <input type="checkbox" name="permissions" value="{{ key }}"
+              {% if admin and key in admin.permissions %}checked{% endif %}>
+            <span>{{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="small text-muted mt-2">Leave permissions blank for full admin access.</div>
+      </div>
+
+      <div class="d-flex gap-2" style="justify-content:flex-end;margin-top:8px">
+        <a href="{{ url_for('admin_admins') }}" class="btn btn-outline">Cancel</a>
+        <button type="submit" class="btn btn-primary">{{ 'Update Admin' if admin else 'Create Admin' }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+{% endblock %}

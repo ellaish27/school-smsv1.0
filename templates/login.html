@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Holy Cross Lake View SSS</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body { background: linear-gradient(135deg, #001a4d 0%, #003087 60%, #1a4a99 100%); min-height: 100vh; display:flex; align-items:center; justify-content:center; }
+    .login-card { background:#fff; border-radius:16px; width:min(420px,94vw); box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden; }
+    .login-header { background:linear-gradient(135deg,#001a4d,#003087); padding:32px 24px; text-align:center; }
+    .login-header img { width:72px; height:72px; border-radius:50%; border:3px solid #D4AF37; object-fit:cover; margin-bottom:10px; }
+    .login-header h1 { color:#fff; font-size:1.1rem; margin:0 0 4px; font-weight:700; }
+    .login-header p  { color:#D4AF37; font-size:.78rem; margin:0; }
+    .login-body { padding:28px 28px 24px; }
+    .login-body .form-label { display:block; }
+    .login-body .form-control { display:block; margin-bottom:16px; }
+    .login-footer { padding:16px 28px; background:#f4f6fb; border-top:1px solid #dde3ef; text-align:center; font-size:.75rem; color:#6b7a99; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="login-header">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="HCLV Logo">
+      <h1>Holy Cross Lake View SSS</h1>
+      <p>School Management System</p>
+    </div>
+    <div class="login-body">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="alert alert-{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+      <form method="POST">
+        <label class="form-label">Username</label>
+        <input type="text" name="username" class="form-control" placeholder="Enter username" required autofocus autocomplete="username">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" placeholder="Enter password" required autocomplete="current-password">
+        <button type="submit" class="btn btn-primary w-100" style="justify-content:center; padding:10px">
+          Sign In
+        </button>
+      </form>
+    </div>
+    <div class="login-footer">
+      Wanyange, Jinja, Uganda &nbsp;|&nbsp; © {{ current_year }} Holy Cross Lake View SSS
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('student_reports') }}" class="btn btn-primary btn-sm">📄 My Reports</a>
+{% endblock %}
+
+{% block content %}
+<!-- profile banner -->
+<div class="card mb-3" style="background:linear-gradient(135deg,#001a4d,#003087);border:none">
+  <div class="card-body d-flex align-items-center gap-2" style="padding:20px;gap:20px">
+    <div style="font-size:3rem">🎓</div>
+    <div>
+      <div style="color:#fff;font-size:1.2rem;font-weight:700">Welcome, {{ student.first_name or student.full_name.split(' ')[0] }}!</div>
+      <div style="color:#D4AF37;font-size:.95rem; margin-top:.35rem">{{ student.full_name }}</div>
+      <div style="color:rgba(255,255,255,.7);font-size:.78rem;margin-top:4px">
+        <span style="font-family:monospace">{{ student.student_no }}</span> &nbsp;|&nbsp;
+        {{ student.class_name or '' }}{% if student.stream %}/{{ student.stream }}{% endif %}
+        {% if student.house %} &nbsp;|&nbsp; House: {{ student.house }}{% endif %}
+        {% if student.combination %} &nbsp;|&nbsp; {{ student.combination }}{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <!-- marks summary -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">
+        Latest Performance
+        {% if latest %}— Term {{ latest.term }}, {{ latest.year }}{% endif %}
+      </span>
+    </div>
+    {% if summary %}
+    <div style="overflow-x:auto">
+      <table class="table">
+        <thead><tr><th>Subject / Paper</th><th>Exam</th><th>Score</th><th>Grade</th></tr></thead>
+        <tbody>
+          {% for row in summary %}
+          {% set score = row.score %}
+          {% if score is not none %}
+            {% if score >= 80 %}{% set g = 'A' %}
+            {% elif score >= 70 %}{% set g = 'B' %}
+            {% elif score >= 55 %}{% set g = 'C' %}
+            {% elif score >= 45 %}{% set g = 'D' %}
+            {% elif score >= 35 %}{% set g = 'E' %}
+            {% else %}{% set g = 'O' %}{% endif %}
+          {% else %}{% set g = 'X' %}{% endif %}
+          <tr>
+            <td>{{ row.subject_name }} <span class="small text-muted">({{ row.paper_code }})</span></td>
+            <td><span class="badge badge-gray">{{ row.exam_type }}</span></td>
+            <td>{{ '%.1f'|format(score) if score is not none else '—' }}</td>
+            <td><span class="badge grade-{{ g }}">{{ g }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="card-body text-center text-muted" style="padding:40px">
+      <div style="font-size:2rem">📊</div>
+      <div>No marks recorded yet.</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- right column: reports & events -->
+  <div>
+        <div class="card mb-3">
+      <div class="card-header"><span class="card-header-title">📅 Upcoming Events</span></div>
+      <div class="card-body" style="padding:12px 14px">
+        {% if upcoming %}
+          {% for e in upcoming %}
+          <div class="event-item" style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+            <span class="event-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);margin-top:6px;flex-shrink:0"></span>
+            <div>
+              <div style="font-weight:600;font-size:.9rem">{{ e.title }}</div>
+              <div class="small text-muted">{{ e.event_date }}{% if e.description %} – {{ e.description }}{% endif %}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted small text-center" style="margin:0">No upcoming events</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-title">📄 My Reports</span>
+        <a href="{{ url_for('student_reports') }}" class="btn btn-sm btn-outline">View All</a>
+      </div>
+      <div class="card-body" style="padding:12px 14px">
+        {% for r in reports[:5] %}
+        <div class="event-item">
+          <span class="event-dot"></span>
+          <div>
+            <div class="event-title">Term {{ r.term }}, {{ r.year }}</div>
+            <div class="event-date">{{ r.generated_at[:10] }}</div>
+          </div>
+          {% if r.file_path %}
+          <a href="{{ url_for('serve_report', filename=r.file_path) }}" target="_blank" class="btn btn-xs btn-success ms-auto">🖼️</a>
+          {% endif %}
+        </div>
+        {% else %}
+        <p class="text-muted small text-center">No reports available yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

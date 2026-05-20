@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Teacher Dashboard{% endblock %}
+{% block page_title %}Teacher Dashboard{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('teacher_marks') }}" class="btn btn-primary btn-sm">📝 Enter Marks</a>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+  <div>
+    <!-- welcome card -->
+    <div class="card mb-3" style="background:linear-gradient(135deg,#001a4d,#003087);border:none">
+      <div class="card-body d-flex align-items-center gap-2" style="padding:20px">
+        <div style="font-size:2.5rem">👨‍🏫</div>
+        <div>
+          <div style="color:#fff;font-size:1.1rem;font-weight:700">Welcome, {{ session.first_name or session.full_name.split(' ')[0] }}!</div>
+          <div style="color:#D4AF37;font-size:.8rem">Teacher ID: {{ teacher.teacher_id }}</div>
+          <div style="color:rgba(255,255,255,.7);font-size:.78rem">{{ teacher.qualification or 'Holy Cross Lake View SSS' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- assigned classes/subjects -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-title">My Teaching Assignments — {{ year }}</span>
+        <form method="GET" style="display:inline-flex;gap:6px;align-items:center">
+          <select name="year" class="form-select" style="width:100px" onchange="this.form.submit()">
+            {% for y in range(current_year - 2, current_year + 2) %}
+            <option value="{{ y }}" {% if y == year|int %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+      {% if assignments %}
+      <div style="overflow-x:auto">
+        <table class="table">
+          <thead><tr><th>Class</th><th>Subject</th><th>Paper</th><th>Action</th></tr></thead>
+          <tbody>
+            {% for a in assignments %}
+            <tr>
+              <td><span class="badge badge-navy">{{ a.class_name }}</span></td>
+              <td class="fw-600">{{ a.subject_name }}</td>
+              <td><span class="badge badge-gray">{{ a.paper_code }}</span></td>
+              <td>
+                <a href="{{ url_for('teacher_marks', class_id=a.class_id, sp_id=a.sp_id, term=1, year=year) }}" class="btn btn-xs btn-primary">📝 Enter Marks</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card-body text-center text-muted" style="padding:40px">
+        <div style="font-size:2rem">📭</div>
+        <div>No assignments found for {{ year }}.</div>
+        <div class="small mt-1">Ask the admin to assign you to classes and subjects.</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- right column: upcoming events -->
+  <div>
+    <div class="card">
+      <div class="card-header"><span class="card-header-title">📅 Upcoming Events</span></div>
+      <div class="card-body" style="padding:12px 14px">
+        {% if upcoming %}
+          {% for e in upcoming %}
+          <div class="event-item" style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+            <span class="event-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);margin-top:6px;flex-shrink:0"></span>
+            <div>
+              <div style="font-weight:600;font-size:.9rem">{{ e.title }}</div>
+              <div class="small text-muted">{{ e.event_date }}{% if e.description %} – {{ e.description }}{% endif %}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted small text-center" style="margin:0">No upcoming events</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

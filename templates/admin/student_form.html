@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if student else 'Add' }} Student{% endblock %}
+{% block page_title %}{{ 'Edit' if student else 'Add' }} Student{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_students') }}" class="btn btn-outline btn-sm">← Back to Students</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:820px; margin:0 auto">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">{{ 'Edit Student Record' if student else 'New Student Registration' }}</span>
+    </div>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        
+        {% if not student %}
+        <div class="alert alert-info mb-3" style="background:rgba(0,48,135,.07); border:1px solid rgba(0,48,135,.2); font-size:.85rem">
+          <strong>Student Number</strong> will be auto-generated as <code>ST-0001-202603-1520</code> after saving.
+        </div>
+        {% else %}
+        <div class="mb-3 p-2" style="background:var(--sidebar-bg); border-radius:4px; font-size:.85rem">
+          <strong>Student No.:</strong> <code style="font-family:monospace">{{ student.student_no }}</code>
+        </div>
+        {% endif %}
+
+        <!-- Basic Info -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Full Name *</label>
+            <input type="text" name="full_name" class="form-control" required 
+                   value="{{ student.full_name if student else '' }}" placeholder="e.g. Akinyi Grace Tendo">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Username *</label>
+            <input type="text" name="username" class="form-control" required 
+                   value="{{ student.username if student else '' }}" placeholder="e.g. akinyi.grace">
+          </div>
+        </div>
+
+        {% if not student %}
+        <div class="mb-3">
+          <label class="form-label">Password <small class="text-muted">(default: student123)</small></label>
+          <input type="password" name="password" class="form-control" placeholder="Leave blank to use default">
+        </div>
+        {% else %}
+        <div class="mb-3">
+          <label class="form-label">New Password <small class="text-muted">(leave blank to keep current)</small></label>
+          <input type="password" name="new_password" class="form-control" placeholder="Leave blank to keep current">
+        </div>
+        {% endif %}
+
+        <!-- Profile Photo -->
+        <div class="mb-3">
+          <label class="form-label">Profile Photo</label>
+          <input type="file" name="profile_pic" accept="image/*" class="form-control">
+          <small class="text-muted">Max 5 MB — PNG, JPG, JPEG</small>
+        </div>
+
+        <!-- School Details -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">School Pay No.</label>
+            <input type="text" name="school_pay_no" class="form-control" maxlength="10" pattern="\d{10}"
+                   value="{{ student.school_pay_no if student else '' }}" placeholder="e.g. 1009702115">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Enrollment Year</label>
+            <input type="number" name="enrollment_year" class="form-control"
+                   value="{{ student.enrollment_year if student else current_year }}">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          {% if not student %}<input type="hidden" name="level" value="{{ level }}">{% endif %}
+          <div class="col-md-6">
+            <label class="form-label">Class *</label>
+            <select name="class_id" class="form-select" id="student-class-select" required>
+              <option value="">— Select Class —</option>
+              {% for c in classes %}
+              <option value="{{ c.id }}" data-class="{{ c.name }}" 
+                      {% if student and student.class_id == c.id %}selected{% endif %}>
+                {{ c.name }}{% if c.stream %}/{{ c.stream }}{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">House</label>
+            <select name="house" class="form-select">
+              <option value="">— Select House —</option>
+              {% for h in houses %}
+              <option value="{{ h }}" {% if student and student.house == h %}selected{% endif %}>{{ h }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- A-Level Section (only shown for new A-Level registration) -->
+        {% if not student and level == 'alevel' %}
+        <div class="mt-4 p-3" style="border:1px solid rgba(212,175,55,.4); border-radius:8px; background:rgba(255,245,220,.8)">
+          <h5 class="mb-3">📚 A-Level Registration</h5>
+          
+          <div class="row g-3 mb-3">
+            {% for i in [1,2,3] %}
+            <div class="col-md-4">
+              <label class="form-label">Principal Subject {{ i }} *</label>
+              <select name="principal_{{ i }}" id="principal_{{ i }}" class="form-select alevel-principal-select" required>
+                <option value="">— Select —</option>
+                {% for subj in alevel_principals %}
+                <option value="{{ subj.id }}" data-name="{{ subj.name }}">{{ subj.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% endfor %}
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Subsidiary Subject *</label>
+            <select name="subsidiary" id="subsidiary" class="form-select" required>
+              <option value="">— Select subsidiary —</option>
+              {% for sub in alevel_subsidiaries %}
+              <option value="{{ sub.id }}" data-name="{{ sub.name }}" data-code="{{ sub.code }}">{{ sub.name }}</option>
+              {% endfor %}
+            </select>
+            <small class="text-muted" id="subsidiary-help">Auto-locks based on principal selection.</small>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Auto-Generated Combination</label>
+            <input type="text" name="combination" id="combination" class="form-control fw-bold" 
+                   readonly value="A-Level" style="letter-spacing:1px; text-transform:uppercase">
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- O-Level Section (only shown for new O-Level registration) -->
+        {% if not student and level == 'olevel' %}
+        <div class="mt-4 p-3" style="border:1px solid rgba(0,48,135,.18); border-radius:8px; background:rgba(220,235,255,.7)">
+          <h5 class="mb-3">📘 O-Level Registration</h5>
+          
+          <div class="mb-3">
+            <strong>S.1 & S.2 (11 Compulsory Subjects)</strong>
+            <div class="row g-2 mt-2">
+              {% for s in ['English Language','Mathematics','Biology','Chemistry','Physics','Geography','History & Political Education','Kiswahili','Entrepreneurship Education','Physical Education','CRE'] %}
+              <div class="col-6"><small>✓ {{ s }}</small></div>
+              {% endfor %}
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <strong>S.3 & S.4 (7 Compulsory + CRE)</strong>
+            <div class="row g-2 mt-2">
+              {% for s in ['English Language','Mathematics','Biology','Chemistry','Physics','Geography','History & Political Education','CRE'] %}
+              <div class="col-6"><small>✓ {{ s }}</small></div>
+              {% endfor %}
+            </div>
+          </div>
+          
+          <div id="olevel-elective-row" class="mb-3 pt-2" style="display:none; border-top:1px dashed rgba(0,48,135,.3)">
+            <label class="form-label">Choose ONE Elective (S.3 / S.4 only)</label>
+            <select name="elective" id="olevel-elective" class="form-select">
+              <option value="">— Select vocational or language subject —</option>
+              {% for sub in olevel_electives %}
+              <option value="{{ sub.id }}" data-name="{{ sub.name }}">{{ sub.name }}</option>
+              {% endfor %}
+            </select>
+            <small class="text-muted">All O-Level students offer CRE. Select one additional subject.</small>
+          </div>
+          
+          <div>
+            <label class="form-label">Combination</label>
+            <input type="text" name="combination" id="combination" class="form-control" readonly value="O-Level">
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Email & UCE -->
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control" value="{{ student.email if student else '' }}">
+        </div>
+        
+        {% if level == 'alevel' %}
+        <div class="mb-3">
+          <label class="form-label">UCE Results</label>
+          <input type="text" name="uce_results" class="form-control" 
+                 value="{{ student.uce_results if student else '' }}" placeholder="e.g. Agg 8">
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <a href="{{ url_for('admin_students') }}" class="btn btn-outline">Cancel</a>
+          <button type="submit" class="btn btn-primary px-4">{{ 'Update Student' if student else 'Add Student' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript for dynamic behavior (only for new student forms) -->
+{% if not student %}
+<script>
+(function(){
+  const classSelect = document.getElementById('student-class-select');
+  const comboInput = document.getElementById('combination');
+  const electiveRow = document.getElementById('olevel-elective-row');
+  const electiveSelect = document.getElementById('olevel-elective');
+  const principalSelects = Array.from(document.querySelectorAll('.alevel-principal-select'));
+  const subsidiarySelect = document.getElementById('subsidiary');
+  const subsidiaryHelp = document.getElementById('subsidiary-help');
+
+  // Hardcoded subsidiary code map (fallback)
+  const SUB_CODE_MAP = {
+    'Subsidiary Mathematics': 'SM',
+    'Subsidiary Computer Studies': 'ICT'
+  };
+
+  function getSubjectCode(name) {
+    if (!name) return '';
+    const n = name.toLowerCase();
+    if (n.includes('computer') || n.includes('ict')) return 'ICT';
+    if (n.includes('mathematics')) return 'SM';
+    return name.trim()[0].toUpperCase();
+  }
+
+  // Prevent duplicate principal selections
+  function syncPrincipalDropdowns() {
+    if (!principalSelects.length) return;
+    const selected = principalSelects
+      .map((sel, idx) => ({ idx, val: sel.value }))
+      .filter(x => x.val !== '');
+    
+    principalSelects.forEach((sel, idx) => {
+      Array.from(sel.options).forEach(opt => {
+        if (!opt.value) return;
+        const isTaken = selected.some(x => x.val === opt.value && x.idx !== idx);
+        opt.disabled = isTaken;
+        opt.textContent = isTaken ? `${opt.dataset.name} (used)` : opt.dataset.name;
+      });
+    });
+  }
+
+  // Update A-Level combination preview
+  function updateAlevelCombo() {
+    if (!principalSelects.length || !comboInput || !subsidiarySelect) return;
+    
+    syncPrincipalDropdowns();
+    
+    const principals = principalSelects
+      .map(s => s.selectedOptions[0]?.dataset.name || '')
+      .filter(Boolean);
+    
+    const hasMath = principals.some(n => n.toLowerCase().includes('mathematics'));
+    const hasEcon = principals.some(n => n.toLowerCase().includes('economics'));
+    
+    // Auto-select & lock subsidiary
+    let targetSub = '';
+    if (hasMath) {
+      targetSub = 'Subsidiary Computer Studies';
+      subsidiarySelect.disabled = true;
+      subsidiaryHelp.textContent = 'Mathematics → Subsidiary ICT (locked)';
+    } else if (hasEcon && !hasMath) {
+      targetSub = 'Subsidiary Mathematics';
+      subsidiarySelect.disabled = true;
+      subsidiaryHelp.textContent = 'Economics → Subsidiary SM (locked)';
+    } else {
+      subsidiarySelect.disabled = false;
+      subsidiaryHelp.textContent = 'Choose ICT or SM';
+    }
+    
+    if (targetSub) {
+      const opt = Array.from(subsidiarySelect.options).find(o => o.dataset.name === targetSub);
+      if (opt) subsidiarySelect.value = opt.value;
+    }
+    
+    // Generate combo: P1[0]+P2[0]+P3[0] / SUB / GP
+    if (principals.length === 3) {
+      const subName = subsidiarySelect.selectedOptions[0]?.dataset.name || '';
+      const subCode = SUB_CODE_MAP[subName] || subsidiarySelect.selectedOptions[0]?.dataset.code || 'SUB';
+      const letters = principals.map(n => getSubjectCode(n)).join('');
+      comboInput.value = `${letters}/${subCode}/GP`;
+    } else {
+      comboInput.value = 'A-Level';
+    }
+  }
+
+  // Update O-Level combination preview
+  function updateOlevelCombo() {
+    if (!classSelect || !comboInput || !electiveRow) return;
+    
+    const cls = classSelect.selectedOptions[0]?.dataset.class || '';
+    const elecName = electiveSelect?.selectedOptions[0]?.dataset.name || '';
+    
+    if (cls === 'S.3' || cls === 'S.4') {
+      electiveRow.style.display = 'block';
+      if (electiveSelect) electiveSelect.required = true;
+      comboInput.value = elecName ? `O-Level (${getSubjectCode(elecName)})` : 'O-Level';
+    } else {
+      electiveRow.style.display = 'none';
+      if (electiveSelect) {
+        electiveSelect.required = false;
+        electiveSelect.value = '';
+      }
+      comboInput.value = 'O-Level';
+    }
+  }
+
+  // Bind events
+  if (principalSelects.length) {
+    principalSelects.forEach(s => s.addEventListener('change', updateAlevelCombo));
+    if (subsidiarySelect) subsidiarySelect.addEventListener('change', updateAlevelCombo);
+    updateAlevelCombo(); // Initial run
+  }
+  
+  if (classSelect) {
+    classSelect.addEventListener('change', updateOlevelCombo);
+    if (electiveSelect) electiveSelect.addEventListener('change', updateOlevelCombo);
+    updateOlevelCombo(); // Initial run
+  }
+})();
+</script>
+{% endif %}
+{% endblock %}

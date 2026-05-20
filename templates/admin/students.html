@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Students{% endblock %}
+{% block page_title %}Students{% endblock %}
+{% block topbar_actions %}
+  <details style="display:inline-block;position:relative">
+    <summary class="btn btn-primary btn-sm" style="cursor:pointer">➕ Add Student</summary>
+    <div style="position:absolute;top:100%;left:0;min-width:160px;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 20px rgba(0,0,0,.08);padding:6px;z-index:50">
+      <!-- Fixed: pointing to new specific routes -->
+      <a href="{{ url_for('admin_add_alevel_student') }}" class="btn btn-ghost btn-sm" style="display:block;width:100%;text-align:left;padding:8px 10px">A-Level</a>
+      <a href="{{ url_for('admin_add_olevel_student') }}" class="btn btn-ghost btn-sm" style="display:block;width:100%;text-align:left;padding:8px 10px">O-Level</a>
+    </div>
+  </details>
+{% endblock %}
+
+{% block content %}
+<!-- filters -->
+<div class="card mb-3">
+  <div class="card-body" style="padding:14px">
+    <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:180px">
+        <label class="form-label">Search</label>
+        <input type="text" name="q" class="form-control" placeholder="Name or student no." value="{{ q }}">
+      </div>
+      <div style="min-width:140px">
+        <label class="form-label">Class</label>
+        <select name="class_id" class="form-select">
+          <option value="">All Classes</option>
+          {% for c in classes %}
+          <option value="{{ c.id }}" {% if selected_class==c.id|string %}selected{% endif %}>{{ c.name }}{% if c.stream %} ({{ c.stream }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="min-width:160px">
+        <label class="form-label">Sort by Name</label>
+        <select name="sort" class="form-select">
+          <option value="class" {% if sort=='class' %}selected{% endif %}>By class then name</option>
+          <option value="name_asc" {% if sort=='name_asc' %}selected{% endif %}>Name A–Z</option>
+          <option value="name_desc" {% if sort=='name_desc' %}selected{% endif %}>Name Z–A</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">🔍 Filter</button>
+      <a href="{{ url_for('admin_students') }}" class="btn btn-outline">Clear</a>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-header-title">All Students ({{ students|length }})</span>
+    <span class="small text-muted">{{ students|length }} record(s)</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Student No.</th>
+          <th>Class</th>
+          <th>Combination</th>
+          <th>House</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td class="text-muted small">{{ loop.index }}</td>
+          <td class="fw-600">{{ s.full_name }}</td>
+          <td class="small">{{ s.username }}</td>
+          <td><span class="badge badge-navy">{{ s.student_no }}</span></td>
+          <td>{{ s.class_name or '<span class="text-muted">—</span>' }}</td>
+          <td class="small">{{ s.combination or '—' }}</td>
+          <td class="small">{{ s.house or '—' }}</td>
+          <td>
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('admin_edit_student', sid=s.id) }}" class="btn btn-xs btn-outline">✏️ Edit</a>
+              <form method="POST" action="{{ url_for('admin_delete_student', sid=s.id) }}" style="display:inline">
+                <button type="submit" class="btn btn-xs btn-danger" data-confirm="Delete {{ s.full_name }}? This cannot be undone.">🗑️</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" class="text-center text-muted" style="padding:32px">
+            No students found. <a href="{{ url_for('admin_add_alevel_student') }}">Add the first student</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

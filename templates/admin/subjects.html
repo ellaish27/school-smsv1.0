@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Subjects{% endblock %}
+{% block page_title %}Subjects & Papers{% endblock %}
+{% block topbar_actions %}
+  <button class="btn btn-primary btn-sm" data-modal-open="add-subject-modal">➕ Add Subject</button>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+  <!-- O-Level -->
+  <div class="card">
+    <div class="card-header"><span class="card-header-title">O-Level Subjects (S.1–S.4)</span></div>
+    <div style="overflow-x:auto">
+      <table class="table">
+        <thead><tr><th>Subject</th><th>Code</th><th>Papers</th><th></th></tr></thead>
+        <tbody>
+          {% for s in subjects if s.level == 'O' %}
+          <tr>
+            <td class="fw-600">{{ s.name }}</td>
+            <td><span class="badge badge-navy">{{ s.code }}</span></td>
+            <td class="small">
+              {% for p in papers if p.subject_id == s.id %}
+                <span class="badge badge-gray">{{ p.paper_code }}</span>
+              {% endfor %}
+            </td>
+            <td style="display:flex;gap:8px">
+              <button type="button" class="btn btn-xs btn-secondary" data-edit-subject data-modal-id="edit-subject-modal"
+                data-action="{{ url_for('admin_update_subject', sid=s.id) }}"
+                data-name="{{ s.name }}"
+                data-code="{{ s.code }}"
+                data-level="{{ s.level }}">✏️</button>
+              <form method="POST" action="{{ url_for('admin_delete_subject', sid=s.id) }}">
+                <button type="submit" class="btn btn-xs btn-danger" data-confirm="Delete {{ s.name }}? This will remove all related marks!">🗑️</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-muted text-center" style="padding:20px">No O-Level subjects</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <!-- A-Level -->
+  <div class="card">
+    <div class="card-header"><span class="card-header-title">A-Level Subjects (S.5–S.6)</span></div>
+    <div style="overflow-x:auto">
+      <table class="table">
+        <thead><tr><th>Subject</th><th>Code</th><th>Papers</th><th></th></tr></thead>
+        <tbody>
+          {% for s in subjects if s.level == 'A' %}
+          <tr>
+            <td class="fw-600">{{ s.name }}</td>
+            <td><span class="badge badge-gold">{{ s.code }}</span></td>
+            <td class="small">
+              {% for p in papers if p.subject_id == s.id %}
+                <span class="badge badge-gray">{{ p.paper_code }}</span>
+              {% endfor %}
+            </td>
+            <td style="display:flex;gap:8px">
+              <button type="button" class="btn btn-xs btn-secondary" data-edit-subject data-modal-id="edit-subject-modal"
+                data-action="{{ url_for('admin_update_subject', sid=s.id) }}"
+                data-name="{{ s.name }}"
+                data-code="{{ s.code }}"
+                data-level="{{ s.level }}">✏️</button>
+              <form method="POST" action="{{ url_for('admin_delete_subject', sid=s.id) }}">
+                <button type="submit" class="btn btn-xs btn-danger" data-confirm="Delete {{ s.name }}?">🗑️</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-muted text-center" style="padding:20px">No A-Level subjects</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- add subject modal -->
+<div class="modal-overlay" id="add-subject-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-header-title">Add New Subject</span>
+      <button class="modal-close" data-modal-close="add-subject-modal">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin_add_subject') }}">
+      <div class="modal-body">
+        <div style="margin-bottom:12px">
+          <label class="form-label">Subject Name *</label>
+          <input type="text" name="name" class="form-control" required placeholder="e.g. Mathematics">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div>
+            <label class="form-label">Code</label>
+            <input type="text" name="code" class="form-control" placeholder="e.g. MTH">
+          </div>
+          <div>
+            <label class="form-label">Level</label>
+            <select name="level" class="form-select">
+              <option value="O">O-Level (S.1–S.4)</option>
+              <option value="A">A-Level (S.5–S.6)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Papers (comma-separated numbers)</label>
+          <input type="text" name="papers" class="form-control" value="1,2" placeholder="e.g. 1,2 or just 1">
+          <div class="small text-muted mt-1">Enter the paper numbers this subject has, e.g. "1,2" for Paper 1 and Paper 2</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close="add-subject-modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Subject</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="edit-subject-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-header-title">Edit Subject</span>
+      <button class="modal-close" data-modal-close="edit-subject-modal">✕</button>
+    </div>
+    <form method="POST" id="edit-subject-form" action="">
+      <div class="modal-body">
+        <div style="margin-bottom:12px">
+          <label class="form-label">Subject Name *</label>
+          <input type="text" name="name" id="edit-subject-name" class="form-control" required>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div>
+            <label class="form-label">Code</label>
+            <input type="text" name="code" id="edit-subject-code" class="form-control" placeholder="e.g. MTH">
+          </div>
+          <div>
+            <label class="form-label">Level</label>
+            <select name="level" id="edit-subject-level" class="form-select">
+              <option value="O">O-Level (S.1–S.4)</option>
+              <option value="A">A-Level (S.5–S.6)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-modal-close="edit-subject-modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Admin Users{% endblock %}
+{% block page_title %}Admin Users{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_add_admin') }}" class="btn btn-primary btn-sm">➕ Add Admin</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-header-title">Administrator Accounts</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="table">
+      <thead>
+        <tr><th>Name</th><th>Username</th><th>Email</th><th>Phone</th><th>Permissions</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for admin in admins %}
+        <tr>
+          <td class="fw-600">{{ admin.full_name }}</td>
+          <td>{{ admin.username }}</td>
+          <td>{{ admin.email or '—' }}</td>
+          <td>{{ admin.phone or '—' }}</td>
+          <td>
+            {% if admin.permission_labels %}
+              <span class="small text-muted">{{ admin.permission_labels }}</span>
+            {% else %}
+              <span class="small text-muted">Full access</span>
+            {% endif %}
+          </td>
+          <td style="display:flex;gap:8px;align-items:center">
+            <a href="{{ url_for('admin_edit_admin', uid=admin.id) }}" class="btn btn-xs btn-secondary">✏️</a>
+            <form method="POST" action="{{ url_for('admin_delete_admin', uid=admin.id) }}" style="margin:0">
+              <button type="submit" class="btn btn-xs btn-danger" data-confirm="Delete {{ admin.full_name }}?">🗑️</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-muted text-center" style="padding:20px">No admin users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

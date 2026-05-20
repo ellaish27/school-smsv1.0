@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block title %}Add A-Level Student{% endblock %}
+{% block page_title %}Add A-Level Student{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_students') }}" class="btn btn-outline btn-sm">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:750px; margin:0 auto">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">🎓 A-Level Student Registration</span>
+    </div>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        
+        <div class="alert alert-info mb-3" style="font-size:.85rem">
+          <strong>Student Number</strong> auto-generates after save.
+        </div>
+
+        <!-- Basic Info -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Last Name *</label>
+            <input type="text" name="last_name" class="form-control" required placeholder="e.g. Okello">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">First Name *</label>
+            <input type="text" name="first_name" class="form-control" required placeholder="e.g. John">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Other Names</label>
+            <input type="text" name="other_names" class="form-control" placeholder="e.g. Robert">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Username *</label>
+            <input type="text" name="username" class="form-control" required placeholder="e.g. john.okello">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Password <small class="text-muted">(default: student123)</small></label>
+          <input type="password" name="password" class="form-control" placeholder="Leave blank to use default">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Profile Photo</label>
+          <input type="file" name="profile_pic" accept="image/*" class="form-control">
+          <small class="text-muted">Max 5 MB — PNG, JPG, JPEG</small>
+        </div>
+
+        <!-- School Details -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">School Pay No.</label>
+            <input type="text" name="school_pay_no" class="form-control" maxlength="10" pattern="\d{10}" placeholder="e.g. 1009702115">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Enrollment Year</label>
+            <input type="number" name="enrollment_year" class="form-control" value="{{ current_year }}">
+          </div>
+        </div>
+        <!-- 🔑 NEW: Gender Field -->
+        <div class="mb-3">
+          <label class="form-label">Gender *</label>
+          <div class="d-flex gap-3">
+            <label class="form-check-label">
+              <input type="radio" name="gender" value="M" class="form-check-input" required> Male
+            </label>
+            <label class="form-check-label">
+              <input type="radio" name="gender" value="F" class="form-check-input" required> Female
+            </label>
+          </div>
+        </div>
+        <!-- 🔑 END Gender Field -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Class *</label>
+            <select name="class_id" class="form-select" id="class-select" required>
+              <option value="">— Select Class —</option>
+              {% for c in classes %}
+              <option value="{{ c.id }}" data-class="{{ c.name }}">{{ c.name }}{% if c.stream %}/{{ c.stream }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">House</label>
+            <select name="house" class="form-select">
+              <option value="">— Select House —</option>
+              {% for h in houses %}
+              <option value="{{ h }}">{{ h }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- A-Level Subjects -->
+        <div class="mt-4 p-3" style="border:1px solid rgba(212,175,55,.4); border-radius:8px; background:rgba(255,245,220,.8)">
+          <h5 class="mb-3">📚 Principal Subjects (Select 3)</h5>
+          <div class="row g-3 mb-3">
+            {% for i in [1,2,3] %}
+            <div class="col-md-4">
+              <label class="form-label">Subject {{ i }} *</label>
+              <select name="principal_{{ i }}" id="p{{ i }}" class="form-select principal-select" required>
+                <option value="">— Select —</option>
+                {% for subj in principals %}
+                <option value="{{ subj.id }}" data-name="{{ subj.name }}">{{ subj.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Subsidiary Subject *</label>
+            <select name="subsidiary" id="subsidiary" class="form-select" required>
+  <option value="">— Select subsidiary —</option>
+  {% for sub in subsidiaries %}
+  <option value="{{ sub.id }}" data-name="{{ sub.name }}" data-code="{{ sub.code }}">{{ sub.name }}</option>
+  {% endfor %}
+</select>
+            <small class="text-muted" id="sub-help">Auto-locks based on principal selection.</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Auto-Generated Combination</label>
+            <input type="text" id="combo-preview" class="form-control fw-bold" readonly 
+                   value="Select 3 principals..." style="letter-spacing:1px; text-transform:uppercase; background:#f8f9fa">
+            <input type="hidden" name="combination" id="combo-hidden">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Email <i style="opacity: 0.4">(optional)</i></label>
+          <input type="email" name="email" class="form-control">
+        </div>
+
+        <!-- <div class="mb-4">
+          <label class="form-label">UCE Results</label>
+          <input type="text" name="uce_results" class="form-control" placeholder="e.g. Agg 8">
+        </div> -->
+
+        <div class="d-flex justify-content-end gap-2">
+          <a href="{{ url_for('admin_students') }}" class="btn btn-outline">Cancel</a>
+          <button type="submit" class="btn btn-primary px-4">Add Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const pSelects = [
+    document.getElementById('p1'),
+    document.getElementById('p2'),
+    document.getElementById('p3')
+  ];
+  const subSelect = document.getElementById('subsidiary');
+  const subHelp = document.getElementById('sub-help');
+  const preview = document.getElementById('combo-preview');
+  const hidden = document.getElementById('combo-hidden');
+
+  // Hardcoded subsidiary code map (100% reliable)
+  const SUB_CODES = {
+    'Subsidiary Mathematics': 'SM',
+    'Subsidiary Computer Studies': 'ICT'
+  };
+
+  function syncDropdowns() {
+    const selected = pSelects.map((s, i) => ({i, v: s.value})).filter(x => x.v !== '');
+    pSelects.forEach((sel, idx) => {
+      Array.from(sel.options).forEach(opt => {
+        if (!opt.value) return;
+        const used = selected.some(x => x.v === opt.value && x.i !== idx);
+        opt.disabled = used;
+        opt.textContent = used ? `${opt.dataset.name} (used)` : opt.dataset.name;
+      });
+    });
+  }
+
+  function updateCombo() {
+    syncDropdowns();
+    
+    const names = pSelects.map(s => s.selectedOptions[0]?.dataset.name || '').filter(Boolean);
+    const hasMath = names.some(n => n.toLowerCase().includes('mathematics'));
+    const hasEcon = names.some(n => n.toLowerCase().includes('economics'));
+    
+    // Auto-lock subsidiary
+    let target = '';
+    if (hasMath) {
+      target = 'Subsidiary Computer Studies';
+      subSelect.disabled = true;
+      subHelp.textContent = '✓ Maths → Subsidiary ICT (locked)';
+    } else if (hasEcon && !hasMath) {
+      target = 'Subsidiary Mathematics';
+      subSelect.disabled = true;
+      subHelp.textContent = '✓ Economics → Subsidiary SM (locked)';
+    } else {
+      subSelect.disabled = false;
+      subHelp.textContent = 'Choose ICT or SM';
+    }
+    
+    if (target) {
+      const opt = Array.from(subSelect.options).find(o => o.dataset.name === target);
+      if (opt) subSelect.value = opt.value;
+    }
+    
+    // Generate combo: P1[0]+P2[0]+P3[0] / SUB / GP
+    if (names.length === 3) {
+      const subName = subSelect.selectedOptions[0]?.dataset.name || '';
+      const subCode = SUB_CODES[subName] || subSelect.selectedOptions[0]?.dataset.code || 'SUB';
+      const letters = names.map(n => n.trim()[0].toUpperCase()).join('');
+      const combo = `${letters}/${subCode}/GP`;
+      preview.value = combo;
+      hidden.value = combo;
+      preview.style.color = subCode === 'SUB' ? '#dc3545' : '#198754';
+    } else {
+      preview.value = 'Select 3 principals...';
+      hidden.value = '';
+    }
+  }
+
+  pSelects.forEach(s => s.addEventListener('change', updateCombo));
+  subSelect.addEventListener('change', updateCombo);
+  updateCombo(); // Initial run
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Master Results Sheet{% endblock %}
+{% block page_title %}📊 Master Results Sheet{% endblock %}
+
+{% block content %}
+<!-- Filter Form -->
+<div class="card mb-3 no-print">
+  <div class="card-body">
+    <form method="POST" class="d-flex gap-2 align-items-end flex-wrap">
+      <div>
+        <label class="form-label">Term</label>
+        <select name="term" class="form-select" style="width:120px">
+          <option value="1" {% if term==1 %}selected{% endif %}>Term 1</option>
+          <option value="2" {% if term==2 %}selected{% endif %}>Term 2</option>
+          <option value="3" {% if term==3 %}selected{% endif %}>Term 3</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Year</label>
+        <select name="year" class="form-select" style="width:100px">
+          {% for y in range(current_year - 2, current_year + 2) %}
+          <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Stream (Optional)</label>
+        <select name="stream" class="form-select" style="width:140px">
+          <option value="">All Streams</option>
+          {% for s in streams %}
+          <option value="{{ s }}" {% if request.form.get('stream')==s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">📊 Generate Sheet</button>
+      <button type="button" onclick="window.print()" class="btn btn-outline">🖨️ Print / Save PDF</button>
+    </form>
+    <div class="text-muted mt-2" style="font-size:0.85rem">
+      Use your browser print dialog and choose Save as PDF for a print-ready file.
+    </div>
+  </div>
+</div>
+
+{% if sheets %}
+  {% for sheet in sheets %}
+  <div class="card mb-4 page-break">
+    <!-- SCHOOL HEADER -->
+    <div style="background:#fff; padding:16px 20px; border-bottom:3px solid #d4af37">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px">
+        <div>
+          <div style="font-size:18px; font-weight:800; color:#001a4d">HOLY CROSS LAKE VIEW SSS</div>
+          <div style="font-size:11px; color:#666; margin-top:4px">
+            P.O. BOX 362, Wanyange Jinja, Uganda<br>
+            TEL: +256 707 555 304, +256 789 599 146 | Email: hclvsss@gmail.com
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:14px; font-weight:700; color:#001a4d">MASTER RESULTS SHEET</div>
+          <div style="font-size:11px; color:#666">
+            {{ sheet.class_name }} {% if sheet.level=='alevel' %}(A-Level){% else %}(O-Level){% endif %}<br>
+            Term {{ term }}, {{ year }} | {{ sheet.students|length }} Students
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- RESULTS TABLE -->
+    <div style="overflow-x:auto; padding:0">
+      <table style="width:100%; border-collapse:collapse; font-size:10px">
+        <thead>
+          <tr style="background:#001a4d; color:#fff">
+            <th style="padding:8px 6px; border:1px solid #ccc; width:40px; text-align:center">No.</th>
+            <th style="padding:8px 6px; border:1px solid #ccc; min-width:180px; text-align:left">Student Name</th>
+            {% for sub in sheet.subjects %}
+            <th style="padding:8px 4px; border:1px solid #ccc; width:50px; text-align:center; font-size:9px">{{ sub }}</th>
+            {% endfor %}
+            <th style="padding:8px 6px; border:1px solid #ccc; width:50px; text-align:center; background:#003087">Pts</th>
+            <th style="padding:8px 6px; border:1px solid #ccc; width:60px; text-align:center; background:#003087">Stream Pos</th>
+            <th style="padding:8px 6px; border:1px solid #ccc; width:60px; text-align:center; background:#003087">Class Pos</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sheet.students %}
+          <tr style="background:{% if loop.index % 2 == 0 %}#f9fafc{% else %}#fff{% endif %}">
+            <td style="padding:6px; border:1px solid #e0e0e0; text-align:center; font-weight:600">{{ loop.index }}</td>
+            <td style="padding:6px; border:1px solid #e0e0e0; font-weight:500">{{ s.name }}</td>
+            {% for sub in sheet.subjects %}
+            <td style="padding:6px; border:1px solid #e0e0e0; text-align:center">
+              {% if sub in s.grades %}
+                {% set g = s.grades[sub].grade %}
+                <span style="font-weight:700; color:{% if g=='A' %}#008632{% elif g=='B' %}#0050a0{% elif g=='C' %}#996600{% elif g=='D' %}#cc6600{% elif g=='E' %}#cc6600{% else %}#b41e1e{% endif %}">{{ g }}</span>
+              {% else %}
+                <span style="color:#ccc">—</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+            <td style="padding:6px; border:1px solid #e0e0e0; text-align:center; font-weight:700; background:#f0f4fb">{{ s.total_pts }}</td>
+            <td style="padding:6px; border:1px solid #e0e0e0; text-align:center; font-weight:600">{{ s.stream_pos }}</td>
+            <td style="padding:6px; border:1px solid #e0e0e0; text-align:center; font-weight:600">{{ s.class_pos }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- FOOTER NOTE -->
+    <div style="padding:8px 20px; background:#f8f9fa; border-top:1px solid #e0e0e0; font-size:9px; color:#666">
+      <strong>Note:</strong> Grades: A(80-100, 5pts) | B(70-79, 4pts) | C(60-69, 3pts) | D(50-59, 2pts) | E(0-49, 1pt). 
+      Lower aggregate points = better performance. Positions based on aggregate points.
+    </div>
+  </div>
+  {% endfor %}
+{% elif request.method == 'POST' %}
+  <div class="alert alert-info">No marks recorded for the selected filters. Enter marks first to generate the sheet.</div>
+{% endif %}
+
+<!-- PRINT STYLES -->
+<style>
+@media print {
+  @page { size: A4 landscape; margin: 8mm; }
+  .no-print { display: none !important; }
+  .page-break { page-break-inside: avoid; margin-bottom: 30px !important; border: none !important; box-shadow: none !important; }
+  .card { border: none !important; }
+  body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  table { font-size: 8pt !important; }
+  th, td { padding: 4px 3px !important; }
+  .badge { border: 1px solid #000 !important; background: none !important; color: #000 !important; }
+}
+</style>
+{% endblock %}

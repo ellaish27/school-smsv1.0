@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}O-Level Master Results{% endblock %}
+{% block page_title %}📊 O-Level Master Results Sheet{% endblock %}
+
+{% block content %}
+<head>
+  <style>
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 0mm; /* Removes browser headers/footers completely */
+  }
+  
+  @page :first {
+    margin-top: 0mm;
+  }
+  
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    overflow: visible !important;
+  }
+  
+  /* Hide app chrome */
+  .sidebar, .topbar, .site-footer, .no-print { 
+    display: none !important; 
+  }
+  
+  /* Keep report content */
+  .page-break { 
+    page-break-inside: avoid; 
+    margin-bottom: 12px !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+  }
+  
+  .card { 
+    border: none !important; 
+    box-shadow: none !important; 
+    padding: 0 !important; 
+    margin: 0 !important;
+  }
+  
+  table { 
+    font-size: 7pt !important; 
+    width: 100% !important; 
+    border-collapse: collapse !important; 
+  }
+  
+  th, td { 
+    padding: 3px 2px !important; 
+    border: 1px solid #ccc !important; 
+  }
+  
+  th[style*="writing-mode"] { 
+    height: 70px !important; 
+    font-size: 6pt !important; 
+  }
+  
+  /* Keep your custom footer */
+  div[style*="Academics Office"] { 
+    page-break-after: avoid !important; 
+  }
+  
+  /* Remove sticky headers in print */
+  thead tr { 
+    position: static !important; 
+    top: auto !important; 
+  }
+}
+</style>
+</head>
+<!-- Filter Form -->
+<div class="card mb-3 no-print">
+  <div class="card-body">
+    <form method="POST" class="d-flex gap-2 align-items-end flex-wrap">
+      <div>
+        <label class="form-label">Term</label>
+        <select name="term" class="form-select" style="width:120px">
+          <option value="1" {% if term==1 %}selected{% endif %}>Term 1</option>
+          <option value="2" {% if term==2 %}selected{% endif %}>Term 2</option>
+          <option value="3" {% if term==3 %}selected{% endif %}>Term 3</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Year</label>
+        <select name="year" class="form-select" style="width:100px">
+          {% for y in range(current_year - 2, current_year + 2) %}
+          <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Stream (Optional)</label>
+        <select name="stream" class="form-select" style="width:140px">
+          <option value="">All Streams</option>
+          {% for s in streams %}
+          <option value="{{ s }}" {% if request.form.get('stream')==s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">📊 Generate Sheet</button>
+      <button type="button" onclick="printClean()" class="btn btn-outline">🖨️ Print</button>
+
+      {# PNG download — posts the current filter values to the PNG route #}
+      <button type="button" onclick="downloadPDF('olevel')" class="btn btn-success"
+              style="background:#28a745;color:#fff;border:none">🖼️ Save as PNG</button>
+    </form>
+    <div class="text-muted mt-2" style="font-size:0.85rem">
+      Use Print for a clean page without app headers. Use Save as PNG to download the generated image.
+    </div>
+  </div>
+</div>
+
+{% if sheets %}
+  {% for sheet in sheets %}
+  <div class="card mb-4 page-break" {% if not loop.first %}style="page-break-before: always;"{% endif %}>
+    <!-- SCHOOL HEADER -->
+    <div style="background:#fff; padding:12px 16px; border-bottom:3px solid #d4af37">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px">
+        <div>
+          <div style="font-size:16px; font-weight:800; color:#001a4d">HOLY CROSS LAKE VIEW S.S.S</div>
+          <div style="font-size:9px; color:#666; margin-top:2px">Sorted by Averages, per stream</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px; font-weight:700; color:#001a4d">{{ sheet.class_name }}</div>
+          <div style="font-size:9px; color:#666">Term {{ term }}, {{ year }} | {{ sheet.students|length }} Students</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- LANDSCAPE TABLE -->
+    <div style="overflow-x:auto; padding:0">
+      <table style="width:100%; border-collapse:collapse; font-size:7.5px;">
+        <thead>
+          <tr style="background:#001a4d; color:#fff; position:sticky; top:0">
+            <th style="padding:6px 4px; border:1px solid #ccc; width:35px; text-align:center">No.</th>
+            <th style="padding:6px 4px; border:1px solid #ccc; min-width:130px; text-align:left">Student Name</th>
+            <th style="padding:6px 4px; border:1px solid #ccc; width:40px; text-align:center">GENDER</th>
+            
+            <!-- O-Level Subject Columns (Vertical Headers) -->
+            {% for sub in sheet.subjects %}
+            <th style="padding:6px 3px; border:1px solid #ccc; width:40px; text-align:center; font-size:6.5px; writing-mode:vertical-rl; transform:rotate(180deg); height:90px; white-space:nowrap">
+              {{ sub | replace('Physical Education', 'PHYSICAL EDUCATION') 
+                     | replace('Information & Communications Technology (ICT)', 'ICT')
+                     | replace('English Language', 'ENGLISH')
+                     | replace('History & Political Education', 'HISTORY & POL. EDUC')
+                     | replace('Christian Religious Education', 'CRE')
+                     | replace('Entrepreneurship Education', 'ENTREPRENEURSHIP')
+                     | replace('Literature in English', 'LITERATURE')
+                     | replace('Nutrition & Food Technology', 'FOOD & NUTRITION') }}
+            </th>
+            {% endfor %}
+            
+            <!-- Summary Columns (EXACT DOCX ORDER) -->
+            <th style="padding:6px 4px; border:1px solid #ccc; width:50px; text-align:center; background:#003087">TOTAL SCORE</th>
+            <th style="padding:6px 4px; border:1px solid #ccc; width:55px; text-align:center; background:#003087">AVERAGE SCORE</th>
+            <th style="padding:6px 4px; border:1px solid #ccc; width:65px; text-align:center; background:#003087">DESCRIPTOR</th>
+            <th style="padding:6px 4px; border:1px solid #ccc; width:50px; text-align:center; background:#003087">STREAM RANK</th>
+            <th style="padding:6px 4px; border:1px solid #ccc; width:50px; text-align:center; background:#003087">CLASS RANK</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sheet.students %}
+          <tr style="background:{% if loop.index % 2 == 0 %}#f9fafc{% else %}#fff{% endif %}">
+            <td style="padding:4px; border:1px solid #e0e0e0; text-align:center; font-weight:600">{{ loop.index }}</td>
+            <td style="padding:4px; border:1px solid #e0e0e0; font-weight:500">{{ s.name }}</td>
+            <td style="padding:4px; border:1px solid #e0e0e0; text-align:center">{{ s.gender }}</td>
+            
+            <!-- Subject Grades with Color Coding -->
+            {% for sub in sheet.subjects %}
+            <td style="padding:4px; border:1px solid #e0e0e0; text-align:center">
+              {% set g = s.grades.get(sub, '-') %}
+              {% if g != '-' %}
+                <span style="font-weight:700; font-size:7.5px; color:{% if g=='A' %}#008632{% elif g=='B' %}#0050a0{% elif g=='C' %}#996600{% elif g=='D' %}#cc6600{% elif g=='E' %}#b41e1e{% else %}#666{% endif %}">{{ g }}</span>
+              {% else %}
+                <span style="color:#ddd; font-size:7.5px">—</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+            
+            <!-- Summary Data -->
+            <td style="padding:4px; border:1px solid #e0e0e0; text-align:center; font-weight:700; background:#f0f4fb">{{ s.total_score if s.total_score is defined else '-' }}</td>
+            <td style="padding:4px; border:1px solid #e0e0e0; text-align:center; font-weight:600">{{ s.average_score if s.average_score is defined else '-' }}</td>
+            <td style="padding:4px; border:1px solid #e0e0e0; text-align:center; font-weight:600; font-size:7px">{{ s.descriptor if s.descriptor is defined else '-' }}</td>
+            <td style="padding:4px; border:1px solid #e0e0e0; text-align:center; font-weight:700; color:#001a4d">{{ s.stream_rank if s.stream_rank is defined else '-' }}</td>
+            <td style="padding:4px; border:1px solid #e0e0e0; text-align:center; font-weight:700; color:#001a4d">{{ s.class_rank if s.class_rank is defined else '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- FOOTER (EXACT DOCX TEXT) -->
+    <div style="padding:6px 16px; background:#f8f9fa; border-top:1px solid #e0e0e0; font-size:8px; color:#666; display:flex; justify-content:space-between">
+      <span><strong>Note:</strong> Grades: A(80-100,5pts) | B(70-79,4pts) | C(60-69,3pts) | D(50-59,2pts) | E(0-49,1pt). Lower aggregate = better.</span>
+      <span>Academics Office &nbsp;|&nbsp; Product of CKS-Tech | D@in Corp. | Joxe_verse</span>
+    </div>
+  </div>
+  {% endfor %}
+{% elif request.method == 'POST' %}
+  <div class="alert alert-info">No O-Level marks recorded for the selected filters.</div>
+{% endif %}
+
+<!-- PRINT STYLES: LANDSCAPE -->
+<style>
+@media print {
+  @page { size: A4 landscape; margin: 8mm; }
+  body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .no-print { display: none !important; }
+  .page-break { page-break-inside: avoid; margin-bottom: 20px !important; border: none !important; box-shadow: none !important; }
+  .card { border: none !important; }
+  table { font-size: 6.5pt !important; }
+  th, td { padding: 3px 2px !important; border: 1px solid #ccc !important; }
+  th[style*="writing-mode"] { height: 75px !important; font-size: 5.5pt !important; }
+  .badge { border: 1px solid #000 !important; background: none !important; color: #000 !important; }
+  .sidebar, .topbar, .site-footer { display: none !important; }
+  .page-break + .page-break { page-break-before: always; break-before: page; }
+  thead tr { position: static !important; top: auto !important; }
+}
+</style>
+
+<script>
+/* ── Clean print: opens a stripped copy of the page in a new window ── */
+function printClean() {
+  /* Collect only the result sheets — skip the filter card */
+  const sheets = document.querySelectorAll('.page-break');
+  if (!sheets.length) { alert('Generate the sheet first, then print.'); return; }
+
+  let body = '';
+  sheets.forEach(el => { body += el.outerHTML; });
+
+  const win = window.open('', '_blank', 'width=1200,height=800');
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Results</title>
+  <style>
+    /* ── Reset ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #1a2340; }
+
+    @page {
+      size: A4 landscape;
+      margin: 8mm;           /* keeps content; removes browser URL / title */
+    }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; font-size: 6.5pt; }
+    th, td { border: 1px solid #ccc; padding: 2px 2px; text-align: center; vertical-align: middle; }
+    thead tr { background: #001a4d; color: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { background: #001a4d; color: #fff; }
+    tbody tr:nth-child(even) { background: #f9fafc; }
+    th[style*="writing-mode"] { height: 75px; font-size: 5.5pt; }
+
+    /* ── Page breaks between sheets ── */
+    .page-break { page-break-after: always; margin-bottom: 0; border: none !important; box-shadow: none !important; }
+    .page-break:last-child { page-break-after: auto; }
+    .card { border: none !important; box-shadow: none !important; }
+  </style>
+</head>
+<body>${body}</body>
+</html>`);
+  win.document.close();
+  win.focus();
+  /* Small delay lets the browser finish layout before the dialog opens */
+  setTimeout(() => { win.print(); win.close(); }, 400);
+}
+
+/* ── PNG download: submit the filter form to the PNG route ── */
+function downloadPDF(level) {
+  const form = document.querySelector('form[method="POST"]');
+  if (!form) return;
+
+  /* Collect current filter values */
+  const term   = form.querySelector('[name="term"]').value;
+  const year   = form.querySelector('[name="year"]').value;
+  const stream = form.querySelector('[name="stream"]') ? form.querySelector('[name="stream"]').value : '';
+
+  /* Build and submit a temporary form pointing at the PDF endpoint */
+  const tmp = document.createElement('form');
+  tmp.method = 'POST';
+  tmp.action = `/admin/results/${level}/png`;   /* e.g. /admin/results/olevel/png */
+
+  [['term', term], ['year', year], ['stream', stream]].forEach(([n, v]) => {
+    const inp = document.createElement('input');
+    inp.type = 'hidden'; inp.name = n; inp.value = v;
+    tmp.appendChild(inp);
+  });
+
+  document.body.appendChild(tmp);
+  tmp.submit();
+  document.body.removeChild(tmp);
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Report Cards{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:380px 1fr;gap:20px">
+  <!-- generator panel -->
+  <div>
+    <div class="card">
+      <div class="card-header"><span class="card-header-title">🖼️ Generate & Export Report (PNG)</span></div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('admin_generate_report') }}">
+          <div style="margin-bottom:12px">
+            <label class="form-label">Student *</label>
+            <select name="student_id" class="form-select" required>
+              <option value="">— Select Student —</option>
+              {% for s in students %}
+              <option value="{{ s.id }}">{{ s.full_name }} ({{ s.student_no }}) — {{ s.class_name or '?' }}{% if s.stream %}/{{ s.stream }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+            <div>
+              <label class="form-label">Term *</label>
+              <select name="term" class="form-select" required>
+                <option value="1">Term 1</option>
+                <option value="2">Term 2</option>
+                <option value="3">Term 3</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Year *</label>
+              <input type="number" name="year" class="form-control" value="{{ current_year }}" min="2020" max="2035" required>
+            </div>
+            <div>
+              <label class="form-label">Report Type *</label>
+              <select name="report_type" class="form-select" required>
+                <option value="BOT">BOT</option>
+                <option value="EOT" selected>EOT</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="background:rgba(0,48,135,.06);border-radius:6px;padding:9px 12px;margin-bottom:12px;font-size:.78rem;color:var(--navy)">
+            <strong>Export Format:</strong> Reports are rendered as high-resolution <code>.png</code> images (A4 size).<br>
+            <strong>BOT</strong> shows term-start scores only. <strong>EOT</strong> includes averages & cumulative data.
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label class="form-label">Class Teacher Comment</label>
+            <textarea name="ct_comment" class="form-control" rows="3" placeholder="Enter remark…" style="resize:vertical"></textarea>
+          </div>
+          <div style="margin-bottom:16px">
+            <label class="form-label">Head Teacher Comment</label>
+            <textarea name="ht_comment" class="form-control" rows="3" placeholder="Enter remark…" style="resize:vertical"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100" style="justify-content:center">
+            🖼️ Generate & Export PNG
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- generated reports list -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">Exported Reports ({{ reports|length }})</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th><th>Student</th><th>Class</th><th>Term</th><th>Type</th><th>Year</th><th>Generated</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in reports %}
+          <tr>
+            <td class="text-muted small">{{ loop.index }}</td>
+            <td class="fw-600">{{ r.full_name }}</td>
+            <td><span class="badge badge-navy">{{ r.class_name or '—' }}{% if r.stream %}/{{ r.stream }}{% endif %}</span></td>
+            <td>Term {{ r.term }}</td>
+            <td><span class="badge {% if r.report_type == 'BOT' %}badge-gold{% else %}badge-navy{% endif %}">{{ r.report_type or 'EOT' }}</span></td>
+            <td>{{ r.year }}</td>
+            <td class="small text-muted">{{ r.generated_at[:16] }}</td>
+            <td style="display:flex;gap:6px;flex-wrap:wrap">
+              {% if r.file_path %}
+              <a href="{{ url_for('serve_report', filename=r.file_path) }}" target="_blank" class="btn btn-xs btn-success">🖼️ View PNG</a>
+              <a href="{{ url_for('download_report', filename=r.file_path) }}" class="btn btn-xs btn-outline">⬇ Download PNG</a>
+              <form method="POST" action="{{ url_for('admin_delete_report', rid=r.id) }}" style="display:inline">
+                <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Delete this PNG report?')">🗑️</button>
+              </form>
+              {% else %}
+              <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="text-center text-muted" style="padding:32px">No PNG reports generated yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
